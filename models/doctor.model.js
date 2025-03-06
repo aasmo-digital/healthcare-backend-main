@@ -48,6 +48,7 @@ const doctorSchema = new mongoose.Schema(
             type: String,
             default: "doctor"
         },
+        commission: { type: Number, default: 0 },
         referrals: [
             {
                 type: mongoose.Schema.Types.ObjectId,

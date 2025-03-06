@@ -82,8 +82,7 @@ const verifyOtp = async (req, res) => {
         // Generate JWT token with `id` instead of `userId`
         const token = jwt.sign(
             { id: user._id, role: user.role }, // Changed userId to id
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+            process.env.JWT_SECRET
         );
 
         return res.status(200).json({ message: "Login successful", token });
@@ -104,7 +103,7 @@ const getOwnProfile = async (req, res) => {
         }
 
         // Fetch user details excluding OTP fields
-        const user = await User.findById(id).select("-otp -otpExpires");
+        const user = await User.findById(id).select("-otp -otpExpires").populate('city');
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });

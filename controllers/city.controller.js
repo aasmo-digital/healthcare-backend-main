@@ -9,7 +9,7 @@ exports.addCity = async (req, res) => {
         await city.save();
         res.status(201).json({ message: "City added successfully", city });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -18,7 +18,7 @@ exports.getAllCities = async (req, res) => {
         const cities = await City.find();
         res.status(200).json(cities);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -28,7 +28,7 @@ exports.getCityById = async (req, res) => {
         if (!city) return res.status(404).json({ message: "City not found" });
         res.status(200).json(city);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -42,7 +42,7 @@ exports.updateCity = async (req, res) => {
         
         res.status(200).json({ message: "City updated successfully", city });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -53,6 +53,6 @@ exports.deleteCity = async (req, res) => {
         
         res.status(200).json({ message: "City deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };

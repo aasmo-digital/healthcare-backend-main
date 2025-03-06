@@ -27,7 +27,7 @@ const addHospital = async (req, res) => {
         res.status(201).json({ success: true, message: "Hospital added successfully", hospital });
     } catch (error) {
         console.error("Error adding hospital:", error);
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -179,7 +179,7 @@ const updateHospital = async (req, res) => {
 
     } catch (error) {
         console.error("Error updating hospital:", error);
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 

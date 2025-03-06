@@ -7,6 +7,8 @@ const treatmentsController = require('../controllers/treatments.controller')
 const conditionsController = require('../controllers/conditions.controller')
 const hospitalController = require('../controllers/hospital.controller')
 const DoctorController = require('../controllers/doctor.controller')
+const bookAppController = require('../controllers/bookApp.controller')
+const addAccountDetailsController = require('../controllers/addAccountDetails.controller')
 const  {uploadSingle,uploadMultiple} = require('../multer/multer')
 const {authenticate,isAdmin} = require('../middleware/auth')
 
@@ -54,4 +56,14 @@ router.get("/getall-doctor",DoctorController.getAllDoctors);
 router.get("/getbyid-doctor/:id", DoctorController.getDoctorsById);
 router.put("/update-doctor/:id", uploadSingle,DoctorController.updateDoctors);
 router.delete("/delete-doctor/:id", DoctorController.deleteDoctors);
+
+//book APP
+router.get('/getall-book-app',bookAppController.getAllBookApps);
+router.get('/getbyid-book-app/:id',bookAppController.getBookAppById);
+
+//account details
+router.get('/getall-accountDetails',addAccountDetailsController.getAllAccountDetails);
+//comission
+router.post("/add-comission",addAccountDetailsController.addCommission);
+router.put("/update-comission",addAccountDetailsController.updateCommission);
 module.exports = router;

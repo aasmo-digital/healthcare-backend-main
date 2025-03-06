@@ -50,7 +50,7 @@ exports.addDoctors = async (req, res) => {
 
     } catch (error) {
         console.log("Error:", error.message);
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -58,10 +58,36 @@ exports.addDoctors = async (req, res) => {
 // Get All Doctors API
 exports.getAllDoctors = async (req, res) => {
     try {
-        const doctors = await Doctor.find().populate("hospitals");
-        res.status(200).json(doctors);
+        const { search = "", page = 1, limit = 10 } = req.query;
+        const query = {};
+        if (search) {
+            query.$or = [
+                { doctorName: { $regex: search, $options: "i" } },
+            ];
+        }
+        const pageNumber = Math.max(1, parseInt(page)); // Ensure page is at least 1
+        const limitNumber = Math.max(1, parseInt(limit)); // Ensure limit is at least 1
+        const skip = (pageNumber - 1) * limitNumber;
+
+
+        const doctors = await Doctor.find(query)
+        .populate("hospitals")
+        .skip(skip)
+        .limit(limitNumber)
+        .sort({ createdAt: -1 });
+    
+          const totalDoctors = await Doctor.countDocuments(query);
+
+
+          res.status(200).json({
+            message: "Fetched Successfully",
+            totalDoctors,
+            totalPages: Math.ceil(totalDoctors / limitNumber),
+            currentPage: pageNumber,
+            doctors
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -72,7 +98,7 @@ exports.getDoctorsById = async (req, res) => {
         if (!doctor) return res.status(404).json({ message: "Doctor not found" });
         res.status(200).json(doctor);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -117,7 +143,7 @@ exports.updateDoctors = async (req, res) => {
         res.status(200).json({ message: "Doctor updated successfully", doctor });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -129,7 +155,7 @@ exports.deleteDoctors = async (req, res) => {
 
         res.status(200).json({ message: "Doctor deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -162,8 +188,7 @@ exports.loginDoctor = async (req, res) => {
         // ✅ Include `id` and `role` in token
         const token = jwt.sign(
             { id: doctor._id, role: "doctor", email: doctor.email },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" } // Token expiration (optional)
+            process.env.JWT_SECRET
         );
 
         res.status(200).json({
@@ -181,7 +206,7 @@ exports.loginDoctor = async (req, res) => {
 
     } catch (error) {
         console.error("Login Error:", error.message);
-        res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };  
 
@@ -201,7 +226,7 @@ exports.getDoctorsOwnProfile = async (req, res) => {
 
         res.status(200).json(doctor);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 

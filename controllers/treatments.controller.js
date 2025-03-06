@@ -29,7 +29,7 @@ exports.addTreatments = async (req, res) => {
         res.status(201).json({ message: "Treatment added successfully", treatment });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -38,7 +38,7 @@ exports.getAllTreatments = async (req, res) => {
         const treatment = await Treatments.find();
         res.status(200).json(treatment);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -48,7 +48,7 @@ exports.getTreatmentsById = async (req, res) => {
         if (!treatment) return res.status(404).json({ message: "Treatment not found" });
         res.status(200).json(treatment);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -90,7 +90,7 @@ exports.updateTreatments = async (req, res) => {
         res.status(200).json({ message: "Treatment updated successfully", treatment });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -101,6 +101,6 @@ exports.deleteTreatments = async (req, res) => {
         
         res.status(200).json({ message: "Treatment deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };

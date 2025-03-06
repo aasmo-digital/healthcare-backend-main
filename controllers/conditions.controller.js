@@ -5,7 +5,6 @@ exports.addConditions = async (req, res) => {
     try {
         const { name, overview, treatmentsId } = req.body;
         console.log(treatmentsId, "treatmentsId")
-        // Ensure treatmentsId is a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(treatmentsId)) {
             return res.status(400).json({ message: 'Invalid Treatment ID format' });
         }
@@ -31,7 +30,7 @@ exports.addConditions = async (req, res) => {
         res.status(201).json({ message: "Condition added successfully", condition });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -42,7 +41,7 @@ exports.getAllConditions = async (req, res) => {
         const conditions = await Conditions.find().populate('treatments');
         res.status(200).json(conditions);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -109,6 +108,6 @@ exports.deleteConditions = async (req, res) => {
 
         res.status(200).json({ message: "Conditions deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
