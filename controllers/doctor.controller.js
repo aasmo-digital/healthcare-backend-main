@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 // Add Doctor API
 exports.addDoctors = async (req, res) => {
     try {
-        const { doctorName, email, password, specialization, hospitals, address, experience, clients, about } = req.body;
+        const { doctorName, email, password, specialization, hospitals, address, experience, education,clients, about } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(hospitals)) {
             return res.status(400).json({ message: "Invalid Hospital ID format" });
@@ -39,6 +39,7 @@ exports.addDoctors = async (req, res) => {
             specialization,
             address,
             experience,
+            education,
             image,
             clients,
             about,
@@ -106,7 +107,7 @@ exports.getDoctorsById = async (req, res) => {
 exports.updateDoctors = async (req, res) => {
     try {
         const { id } = req.params;
-        const { doctorName, email, password, specialization, hospitals, address, experience, clients, about } = req.body;
+        const { doctorName, email, password, specialization, hospitals, address, experience, education,clients, about } = req.body;
 
         let doctor = await Doctor.findById(id);
         if (!doctor) {
@@ -134,6 +135,7 @@ exports.updateDoctors = async (req, res) => {
         doctor.image = image;
         doctor.specialization = specialization || doctor.specialization;
         doctor.address = address || doctor.address;
+        doctor.education=education||doctor.education;
         doctor.experience = experience || doctor.experience;
         doctor.clients = clients || doctor.clients;
         doctor.about = about || doctor.about;
@@ -229,5 +231,48 @@ exports.getDoctorsOwnProfile = async (req, res) => {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+
+
+
+exports.addToWishlist = async (req, res) => {
+    try {
+        const { doctorId } = req.params; // Doctor ID from request params
+
+        const doctor = await Doctor.findById(doctorId);
+        if (!doctor) {
+            return res.status(404).json({ success: false, message: "Doctor not found" });
+        }
+
+        doctor.iswhishlist = "true";
+        await doctor.save();
+
+        res.status(200).json({ success: true, message: "Added to Wishlist", doctor });
+    } catch (error) {
+        console.error("Error adding to wishlist:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
+
+exports.removeFromWishlist = async (req, res) => {
+    try {
+        const { doctorId } = req.params;
+
+        const doctor = await Doctor.findById(doctorId);
+        if (!doctor) {
+            return res.status(404).json({ success: false, message: "Doctor not found" });
+        }
+
+        doctor.iswhishlist = "false";
+        await doctor.save();
+
+        res.status(200).json({ success: true, message: "Removed from Wishlist", doctor });
+    } catch (error) {
+        console.error("Error removing from wishlist:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
 
 

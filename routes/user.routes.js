@@ -8,6 +8,8 @@ const doctorController = require('../controllers/doctor.controller')
 const cityController = require('../controllers/city.controller')
 const bookAppController = require('../controllers/bookApp.controller')
 const addAccountDetailsController = require('../controllers/addAccountDetails.controller')
+const bannerController = require('../controllers/banner.controller')
+const searchCrontroller = require('../controllers/searchAPI.controller')
 const {authenticate} = require('../middleware/auth')
 
 router.post('/register',userController.register);
@@ -30,10 +32,19 @@ router.get("/getbyid-hospital/:id", hospitalController.getbyIdHospital);
 //doctor
 router.get("/getall-doctor",doctorController.getAllDoctors);
 router.get("/getbyid-doctor/:id", doctorController.getDoctorsById);
+
+//doctos add and remove whishlist
+router.post("/add-whishlist-doctor/:doctorId",doctorController.addToWishlist);
+router.post("/remove-whishlist-doctor/:doctorId", doctorController.removeFromWishlist);
+
 //book appoitment
 router.post('/book-app',bookAppController.createApp);
 router.get('/getown-book-app',bookAppController.getOwnBookApps);
 //add accoutn details
 router.post('/add-account-details',addAccountDetailsController.addAccountDetails);
-
+//banner
+router.get("/getall-banner",bannerController.getAllBanner);
+router.get("/getbyid-banner/:id", bannerController.getbyIdBanner);
+// search hospital docotors users
+router.get("/search",searchCrontroller.search);
 module.exports = router;

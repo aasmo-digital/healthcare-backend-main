@@ -37,6 +37,9 @@ const doctorSchema = new mongoose.Schema(
         clients: {
             type: String
         },
+        education: {
+            type: String
+        },
         about: {
             type: String
         },
@@ -48,6 +51,11 @@ const doctorSchema = new mongoose.Schema(
             type: String,
             default: "doctor"
         },
+        iswhishlist: {
+            type: String,
+            enum:["true","false"],
+            default: "false"
+        },
         commission: { type: Number, default: 0 },
         referrals: [
             {
@@ -56,10 +64,11 @@ const doctorSchema = new mongoose.Schema(
             }
         ]
     },
+
     { timestamps: true }
 );
 
-// Function to generate a **random 6-digit** referral code
+
 const generateReferralCode = async () => {
     let newCode;
     let isUnique = false;
@@ -71,7 +80,7 @@ const generateReferralCode = async () => {
     return newCode;
 };
 
-// Middleware to auto-generate a **6-digit referralCode** & hash password before saving
+
 doctorSchema.pre("save", async function (next) {
     if (!this.referralCode) {
         this.referralCode = await generateReferralCode();
