@@ -10,7 +10,8 @@ const DoctorController = require('../controllers/doctor.controller')
 const bookAppController = require('../controllers/bookApp.controller')
 const addAccountDetailsController = require('../controllers/addAccountDetails.controller')
 const bannerController = require('../controllers/banner.controller')
-const  {uploadSingle,uploadMultiple} = require('../multer/multer')
+// const  {uploadSingle,uploadMultiple} = require('../multer/multer')
+const  {uploadSingle,uploadMultiple} = require('../utils/s3Images')
 const {authenticate,isAdmin} = require('../middleware/auth')
 
 router.post("/register", adminController.register);

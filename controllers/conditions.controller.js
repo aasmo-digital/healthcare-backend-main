@@ -16,7 +16,7 @@ exports.addConditions = async (req, res) => {
         }
 
         // Handle image upload
-        const image = req.file ? `/uploads/${req.file.filename}` : null;
+        const image = req.file ? req.file.location : null; 
 
         // Create new condition
         const condition = new Conditions({
@@ -83,8 +83,8 @@ exports.updateConditions = async (req, res) => {
         }
 
         // Handle image update (keep old image if not provided)
-        const image = req.file ? `/uploads/${req.file.filename}` : condition.image;
-
+    
+        const image = req.file ? req.file.location : condition.image; 
         // Update fields only if provided
         condition.name = name || condition.name;
         condition.image = image;
@@ -111,3 +111,5 @@ exports.deleteConditions = async (req, res) => {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+

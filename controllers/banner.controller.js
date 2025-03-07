@@ -7,7 +7,7 @@ exports.create = async (req, res) => {
             res.status(400).json({ message: "Name, URL, and image are required." })
         }
 
-        let image = `/uploads/${req.file.filename}`;
+        const image = req.file ? req.file.location : null; 
         const data = new Bannner({
             name,
             url,
@@ -60,8 +60,8 @@ exports.updateTreatments = async (req, res) => {
         }
 
         // Handle image update
-        const image = req.file ? `/uploads/${req.file.filename}` : banner.image;
-
+        // const image = req.file ? `/uploads/${req.file.filename}` : banner.image;
+        const image = req.file ? req.file.location :  banner.image; 
         banner.name = name || banner.name;
         banner.url = url || banner.url;
         banner.image = image;

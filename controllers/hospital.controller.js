@@ -1,14 +1,15 @@
 const Hospital = require('../models/hospital.model');
+const Doctor = require('../models/doctor.model');
 const Conditions = require('../models/conditions.model');
 const mongoose = require("mongoose");
 const path = require("path");
 const addHospital = async (req, res) => {
     try {
         const { hospitalName, address, conditions, overview, timings, specialitiesTreatments } = req.body;
-        let imageUrls = [];
-
+     
+        let imageUrls=[];
         if (req.files && req.files.length > 0) {
-            imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+            imageUrls = req.files ? req.files.map(file => file.location) : [];
         }
 
         const parsedSpecialities = specialitiesTreatments ? JSON.parse(specialitiesTreatments) : [];
@@ -126,7 +127,8 @@ const updateHospital = async (req, res) => {
 
         // If new images are uploaded, replace existing images
         if (req.files && req.files.length > 0) {
-            imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+            // imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+            imageUrls = req.files ? req.files.map(file => file.location):[]
         }
 
         // Ensure `conditions` is a valid ObjectId
@@ -183,12 +185,6 @@ const updateHospital = async (req, res) => {
     }
 };
 
-
-
-
-
-
-
 const deleteHospital = async (req, res) => {
     try {
         const { id } = req.params;
@@ -205,5 +201,40 @@ const deleteHospital = async (req, res) => {
     }
 }
 
+const getHospitalsByCondition = async (req, res) => {
+    try {
+        const { conditionId } = req.params;
 
-module.exports = { addHospital, getallHospital, getbyIdHospital, updateHospital, deleteHospital, getallHospitalUser }
+        if (!mongoose.Types.ObjectId.isValid(conditionId)) {
+            return res.status(400).json({ message: "Invalid Condition ID format" });
+        }
+
+        // Find hospitals that include this conditionId
+        const hospitals = await Hospital.find({ conditions: conditionId });
+
+        if (!hospitals.length) {
+            return res.status(404).json({ message: "No hospitals found for this condition" });
+        }
+
+        // Extract hospital IDs
+        const hospitalIds = hospitals.map(hospital => hospital._id);
+
+        // Find doctors who work in these hospitals
+        const doctors = await Doctor.find({ hospitals: { $in: hospitalIds } });
+
+        res.status(200).json({ 
+            success: true, 
+            hospitals, 
+            doctors 
+        });
+
+    } catch (error) {
+        console.error("Error fetching hospitals and doctors:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
+
+
+module.exports = { addHospital, getallHospital, getbyIdHospital, updateHospital, getHospitalsByCondition,deleteHospital, getallHospitalUser }

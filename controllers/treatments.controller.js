@@ -5,7 +5,7 @@ exports.addTreatments = async (req, res) => {
         const { name, treatmentDuration, treatmentCost,overview } = req.body;
 
         // Extract the uploaded file name
-        const image = req.file ? req.file.filename : null; 
+        const image = req.file ? req.file.location : null; 
 
         // Ensure treatmentDuration and treatmentCost are parsed correctly
         const parsedDuration = Array.isArray(treatmentDuration) 
@@ -20,7 +20,7 @@ exports.addTreatments = async (req, res) => {
         const treatment = new Treatments({
             name,
             overview,
-            image: image ? `/uploads/${image}` : null,
+            image,
             treatmentDuration: parsedDuration,
             treatmentCost: parsedCost
         });
@@ -63,8 +63,8 @@ exports.updateTreatments = async (req, res) => {
         }
 
         // Handle image update
-        const image = req.file ? `/uploads/${req.file.filename}` : treatment.image;
-
+      
+        const image = req.file ? req.file.location : treatment.image; 
         // Preserve existing treatmentDuration & treatmentCost if not provided in request
         const parsedDuration = treatmentDuration
             ? Array.isArray(treatmentDuration)

@@ -30,7 +30,7 @@ exports.addDoctors = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const image = req.file ? `/uploads/${req.file.filename}` : null;
+        const image = req.file ? req.file.location : null; 
 
         const doctor = new Doctor({
             doctorName,
@@ -125,7 +125,7 @@ exports.updateDoctors = async (req, res) => {
             doctor.hospitals = hospital._id;
         }
 
-        const image = req.file ? `/uploads/${req.file.filename}` : doctor.image;
+        const image = req.file ? req.file.location :  doctor.image; 
         if (password) {
             doctor.password = await bcrypt.hash(password, 10);
         }

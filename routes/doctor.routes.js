@@ -3,7 +3,8 @@ const router = express.Router();
 const hospitalController = require('../controllers/hospital.controller')
 const DoctorController = require('../controllers/doctor.controller')
 const addAccountDetailsController = require('../controllers/addAccountDetails.controller')
-const  {uploadSingle} = require('../multer/multer')
+// const  {uploadSingle} = require('../multer/multer')
+const  {uploadSingle} = require('../utils/s3Images')
 const {authenticate,isDoctor} = require('../middleware/auth')
 
 router.post("/register",uploadSingle,DoctorController.addDoctors);

@@ -26,9 +26,11 @@ router.get("/getbyid-treatments/:id", treatmentsController.getTreatmentsById);
 //conditions
 router.get("/getall-conditions",conditionsController.getAllConditions);
 router.get("/getbyid-conditions/:id", conditionsController.getConditionsById);
+
 //hospital
 router.get("/getall-hospital",hospitalController.getallHospitalUser);
 router.get("/getbyid-hospital/:id", hospitalController.getbyIdHospital);
+router.get("/hospitals-doctors/by-condition/:conditionId", hospitalController.getHospitalsByCondition);
 //doctor
 router.get("/getall-doctor",doctorController.getAllDoctors);
 router.get("/getbyid-doctor/:id", doctorController.getDoctorsById);
