@@ -10,10 +10,11 @@ const {authenticate,isDoctor} = require('../middleware/auth')
 
 router.post("/register",uploadSingle,DoctorController.addDoctors);
 router.post("/login",DoctorController.loginDoctor);
+router.get("/getall-hospital",hospitalController.getallHospitalUser);
 router.use(authenticate, isDoctor);
 
 router.get("/getown-profile",DoctorController.getDoctorsOwnProfile);
 //add accoutn details
 router.post('/add-account-details',addAccountDetailsController.addAccountDetails);
-router.get("/getall-hospital",hospitalController.getallHospitalUser);
+
 module.exports = router;
