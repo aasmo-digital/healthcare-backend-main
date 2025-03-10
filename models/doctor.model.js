@@ -51,6 +51,11 @@ const doctorSchema = new mongoose.Schema(
             type: String,
             default: "doctor"
         },
+        isAccountDetails:{
+            type:Boolean,
+           
+            default:false
+         },
         iswhishlist: {
             type: String,
             enum:["true","false"],

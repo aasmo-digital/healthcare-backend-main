@@ -24,6 +24,10 @@ exports.addAccountDetails = async (req, res) => {
         });
 
         await data.save();
+     
+         const Model = role === 'doctor' ? Doctor : User;
+         await Model.findByIdAndUpdate(id, { isAccountDetails: true }, { new: true });
+ 
         res.status(201).json({ message: "Account details added successfully", data });
 
     } catch (error) {
@@ -135,7 +139,7 @@ exports.updateCommission = async (req, res) => {
         if (role === "user") {
             updatedUser = await User.findByIdAndUpdate(
                 id,
-                { $set: { commission: commission } }, // Set new commission
+                { $set: { commission: commission } },
                 { new: true }
             ).select("fullName email phone commission");
         } else if (role === "doctor") {

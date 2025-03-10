@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
+    isAccountDetails:{
+       type:Boolean,
+      
+       default:false
+    },
     commission: { type: Number, default: 0 },
     referrals: [
         {
