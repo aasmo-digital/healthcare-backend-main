@@ -3,6 +3,7 @@ const router = express.Router();
 const hospitalController = require('../controllers/hospital.controller')
 const DoctorController = require('../controllers/doctor.controller')
 const addAccountDetailsController = require('../controllers/addAccountDetails.controller')
+
 // const  {uploadSingle} = require('../multer/multer')
 const  {uploadSingle} = require('../utils/s3Images')
 const {authenticate,isDoctor} = require('../middleware/auth')
@@ -14,4 +15,5 @@ router.use(authenticate, isDoctor);
 router.get("/getown-profile",DoctorController.getDoctorsOwnProfile);
 //add accoutn details
 router.post('/add-account-details',addAccountDetailsController.addAccountDetails);
+router.get("/getall-hospital",hospitalController.getallHospitalUser);
 module.exports = router;
