@@ -95,15 +95,21 @@ const verifyOtp = async (req, res) => {
 
 const getOwnProfile = async (req, res) => {
     try {
-        // Ensure user ID is extracted correctly from the authenticated request
         const id = req.user.id;
 
         if (!id) {
             return res.status(400).json({ message: "User ID not found in token" });
         }
 
-        // Fetch user details excluding OTP fields
-        const user = await User.findById(id).select("-otp -otpExpires").populate('city');
+        // Fetch user details including full details of referred users
+        const user = await User.findById(id)
+            .select("-otp -otpExpires")
+            .populate('city') // Populating city details
+            .populate({
+                path: 'referrals', 
+                select: 'fullName phone email city role createdAt', // Selecting only necessary fields
+                populate: { path: 'city', select: 'name' } // Populating city inside referrals
+            });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -115,6 +121,7 @@ const getOwnProfile = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
 
 const getallUser = async (req, res) => {
     try {
@@ -200,5 +207,31 @@ const deleteUser = async (req, res) => {
 
     }
 }
+const getReferredUsers = async (req, res) => {
+    try {
+        const userId = req.user.id; // Logged-in user ID
 
-module.exports = { register, sendOtp, verifyOtp, getOwnProfile, getallUser ,getbyIdUser,updateUser,deleteUser};
+        if (!userId) {
+            return res.status(400).json({ message: "User ID not found in token" });
+        }
+
+        // Find the logged-in user's referral code
+        const user = await User.findById(userId).select("referralCode");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Fetch all users who used this referral code
+        const referredUsers = await User.find({ referrals: userId })
+            .select("fullName phone email city role createdAt")
+            .populate("city", "name");
+
+        res.status(200).json({ message: "Fetched Successfully", data: referredUsers });
+    } catch (error) {
+        console.error("Error fetching referred users:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+module.exports = { register, sendOtp, verifyOtp, getOwnProfile,getReferredUsers, getallUser ,getbyIdUser,updateUser,deleteUser};

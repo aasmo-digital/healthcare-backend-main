@@ -65,7 +65,7 @@ const doctorSchema = new mongoose.Schema(
         referrals: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User" // List of users who used this doctor's referral code
+                ref: "Hospital" 
             }
         ]
     },

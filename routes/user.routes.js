@@ -20,6 +20,8 @@ router.get("/getall-city",cityController.getAllCities);
 router.use(authenticate);
 router.get('/get-profile',userController.getOwnProfile);
 router.put('/update-profile/:id',userController.updateUser);
+
+router.get("/referred-users", userController.getReferredUsers);
 //tretments
 router.get("/getall-treatments",treatmentsController.getAllTreatments);
 router.get("/getbyid-treatments/:id", treatmentsController.getTreatmentsById);
@@ -49,4 +51,6 @@ router.get("/getall-banner",bannerController.getAllBanner);
 router.get("/getbyid-banner/:id", bannerController.getbyIdBanner);
 // search hospital docotors users
 router.get("/search",searchCrontroller.search);
+
+
 module.exports = router;

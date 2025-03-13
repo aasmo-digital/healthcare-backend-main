@@ -19,5 +19,8 @@ router.get("/getown-profile",DoctorController.getDoctorsOwnProfile);
 router.post('/add-account-details',addAccountDetailsController.addAccountDetails);
 //get own appointement doctor
 router.get("/getown-appointment",appointmentController.getDoctorAppointments);
-
+//refer hospital
+router.post('/add-refer-hospital',DoctorController.refferalhospital);
+//refer hospital
+router.get('/get-refer-hospital',DoctorController.getOwnRefferals);
 module.exports = router;

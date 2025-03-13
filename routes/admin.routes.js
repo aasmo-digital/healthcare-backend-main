@@ -59,6 +59,10 @@ router.get("/getbyid-doctor/:id", DoctorController.getDoctorsById);
 router.put("/update-doctor/:id", uploadSingle,DoctorController.updateDoctors);
 router.delete("/delete-doctor/:id", DoctorController.deleteDoctors);
 
+//doctor refferal hospital
+router.get("/getall-doctor-refer",DoctorController.getAllRefferals);
+
+
 //book APP
 router.get('/getall-book-app',bookAppController.getAllBookApps);
 router.get('/getbyid-book-app/:id',bookAppController.getBookAppById);
@@ -74,4 +78,7 @@ router.get("/getall-banner",bannerController.getAllBanner);
 router.get("/getbyid-banner/:id", bannerController.getbyIdBanner);
 router.put("/update-banner/:id", uploadSingle,bannerController.updateTreatments);
 router.delete("/delete-banner/:id", bannerController.deleteBanner);
+
+
+
 module.exports = router;

@@ -1,5 +1,6 @@
 const Doctor = require("../models/doctor.model");
 const Hospital = require("../models/hospital.model");
+const DoctorRefferalHospital = require("../models/doctorRefferalHospitals.model");
 const User = require("../models/user.models");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
@@ -202,6 +203,7 @@ exports.loginDoctor = async (req, res) => {
                 specialization: doctor.specialization,
                 hospitals: doctor.hospitals,
                 image: doctor.image,
+                referralCode: doctor.referralCode,
             },
             token
         });
@@ -274,5 +276,59 @@ exports.removeFromWishlist = async (req, res) => {
     }
 };
 
+exports.refferalhospital = async (req, res) => {
+    try {
+        const { hospitalId,refferalCode } = req.body;
+        if (!hospitalId || !refferalCode) return res.status(400).json({ message: "All fields required" });
+
+        const refferalshospital = new DoctorRefferalHospital({ hospitalId,
+            refferalCode });
+        await refferalshospital.save();
+        res.status(201).json({ message: "Refferal added successfully", refferalshospital });
+    } catch (error) {
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+exports.getOwnRefferals = async (req, res) => {
+    try {
+        const doctorId = req.user.id; // Getting logged-in doctor ID from auth middleware
+
+        // Find referrals where the referral code matches the logged-in doctor's code
+        const doctor = await Doctor.findById(doctorId);
+        if (!doctor) {
+            return res.status(404).json({ message: "Doctor not found" });
+        }
+
+        const referrals = await DoctorRefferalHospital.find({ refferalCode: doctor.referralCode }).populate("hospitalId");
+
+        res.status(200).json({ success: true, referrals });
+    } catch (error) {
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
 
 
+exports.getAllRefferals = async (req, res) => {
+    try {
+        // Check if the logged-in user is an admin
+        if (req.user.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admins only." });
+        }
+
+        // Get all referrals with doctor and hospital details
+        const allReferrals = await DoctorRefferalHospital.find()
+            .populate("hospitalId") // Get hospital details
+            .lean(); // Convert Mongoose documents to plain objects
+
+        // Fetch doctor details based on referralCode
+        for (let referral of allReferrals) {
+            const doctor = await Doctor.findOne({ referralCode: referral.refferalCode }).select("doctorName email specialization image");
+            referral.doctor = doctor || null; // Add doctor details
+        }
+
+        res.status(200).json({ success: true, referrals: allReferrals });
+    } catch (error) {
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
