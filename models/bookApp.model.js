@@ -19,6 +19,12 @@ const BookAppSchema = new mongoose.Schema({
         ref: "Conditions",
         required: true
     },
+    doctorId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+        default:null,
+        required: false
+    },
     dob: {
         type: Date,
         required: true

@@ -5,7 +5,7 @@ const User = require('../models/user.models');
 const Doctor = require('../models/doctor.model');
 const createApp = async (req, res) => {
     try {
-        const { name, cityId, relation, treatmentCondition, dob, gender, usedRefferal } = req.body;
+        const { name, cityId, relation, treatmentCondition, dob, gender, usedRefferal, doctorId } = req.body;
         const createdBy = req.user.id; // Extract user ID from authentication
         console.log(req.body, "req.body")
         if (!name || !cityId || !relation || !treatmentCondition || !dob || !gender) {
@@ -20,9 +20,15 @@ const createApp = async (req, res) => {
         const condition = await Condition.findById(treatmentCondition);
         if (!condition) return res.status(404).json({ message: "Condition ID not found" });
 
+        
+
         const city = await City.findById(cityId);
         if (!city) return res.status(404).json({ message: "City ID not found" });
-
+        let doctor;
+        if (doctorId) {
+            doctor = await Doctor.findById(doctorId);
+            if (!doctor) return res.status(404).json({ message: "Doctor ID not found" });
+        }
         if (usedRefferal) {
             const refferalCheckUser = await User.findOne({ referralCode: usedRefferal });
             const refferalCheckDoctor = await Doctor.findOne({ referralCode: usedRefferal });
@@ -41,6 +47,7 @@ const createApp = async (req, res) => {
             gender,
             usedRefferal: usedRefferal || null,
             createdBy,
+            doctorId:doctor?._id||null
         });
 
         await bookApp.save();
@@ -74,6 +81,7 @@ const getAllBookApps = async (req, res) => {
         const bookApps = await BookApp.find(query)
             .populate("city", "name")
             .populate("treatmentCondition", "name")
+            .populate("doctorId", "doctorName")
             .lean(); // Convert Mongoose docs to plain JS objects
 
         // Fetch referral details dynamically
@@ -123,6 +131,7 @@ const getBookAppById = async (req, res) => {
         const bookApp = await BookApp.findById(id)
             .populate("city", "name")
             .populate("treatmentCondition", "name")
+            .populate("doctorId", "doctorName")
             .lean();
 
         if (!bookApp) {
@@ -171,6 +180,7 @@ const getOwnBookApps = async (req, res) => {
             .select("-otp -otpExpires") // Exclude OTP fields
             .populate("city", "name")
             .populate("treatmentCondition", "name")
+            .populate("doctorId", "doctorName")
             .lean();
 
         // Fetch referral details dynamically
@@ -209,7 +219,28 @@ const getOwnBookApps = async (req, res) => {
     }
 };
 
+//get appointment by doctorId
+const getDoctorAppointments = async (req, res) => {
+    try {
+        const doctorId = req.user.id; // Token se doctor ki ID le rahe hain
+
+        // Sirf wahi appointments le jo iss doctor se judi ho
+        const appointments = await BookApp.find({ doctorId }).sort({ createdAt: -1 });
+
+        if (!appointments || appointments.length === 0) {
+            return res.status(404).json({ message: "No appointments found for this doctor" });
+        }
+
+        res.status(200).json({ success: true, appointments });
+    } catch (error) {
+        console.error("Error fetching doctor appointments:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
 
 
 
-module.exports = { createApp, getAllBookApps, getBookAppById, getOwnBookApps }
+
+
+
+module.exports = { createApp, getAllBookApps, getBookAppById, getOwnBookApps,getDoctorAppointments }

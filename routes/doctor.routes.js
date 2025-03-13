@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const hospitalController = require('../controllers/hospital.controller')
 const DoctorController = require('../controllers/doctor.controller')
+const appointmentController = require('../controllers/bookApp.controller')
 const addAccountDetailsController = require('../controllers/addAccountDetails.controller')
 
 // const  {uploadSingle} = require('../multer/multer')
@@ -16,5 +17,7 @@ router.use(authenticate, isDoctor);
 router.get("/getown-profile",DoctorController.getDoctorsOwnProfile);
 //add accoutn details
 router.post('/add-account-details',addAccountDetailsController.addAccountDetails);
+//get own appointement doctor
+router.get("/getown-appointment",appointmentController.getDoctorAppointments);
 
 module.exports = router;
