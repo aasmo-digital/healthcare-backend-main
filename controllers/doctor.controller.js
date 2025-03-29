@@ -9,44 +9,42 @@ const jwt = require("jsonwebtoken");
 // Add Doctor API
 exports.addDoctors = async (req, res) => {
     try {
-        const { doctorName, email, password, specialization, hospitals, address, experience, education,clients, about } = req.body;
+        const { doctorName, specialization, hospitals, overview } = req.body;
 
-        if (!mongoose.Types.ObjectId.isValid(hospitals)) {
-            return res.status(400).json({ message: "Invalid Hospital ID format" });
+        // Handle single or multiple hospital IDs
+        const hospitalIds = Array.isArray(hospitals) ? hospitals : [hospitals];
+
+        if (hospitalIds.length === 0) {
+            return res.status(400).json({ message: 'Please provide valid hospital IDs' });
         }
 
-        const hospital = await Hospital.findById(hospitals);
-        if (!hospital) {
-            return res.status(404).json({ message: "Hospital ID not found" });
+        const validHospitals = [];
+        for (const id of hospitalIds) {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: `Invalid hospital ID format: ${id}` });
+            }
+
+            const hospital = await Hospital.findById(id);
+            if (!hospital) {
+                return res.status(404).json({ message: `Hospital ID not found: ${id}` });
+            }
+
+            validHospitals.push(id);
         }
 
-        const existingDoctor = await Doctor.findOne({ email });
-        if (existingDoctor) {
-            return res.status(400).json({ message: "Email already in use" });
+        let imageUrls = [];
+        if (req.files && req.files.length > 0) {
+            imageUrls = req.files.map(file => file.location);
         }
-
-        // ✅ Ensure password is hashed correctly
-        if (!password) {
-            return res.status(400).json({ message: "Password is required" });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const image = req.file ? req.file.location : null; 
 
         const doctor = new Doctor({
             doctorName,
-            email,
-            password,
             specialization,
-            address,
-            experience,
-            education,
-            image,
-            clients,
-            about,
-            hospitals: hospital._id
+            images: imageUrls,
+            hospitals: validHospitals,
+            overview
         });
-        console.log(hashedPassword,"hashedPassword")
+
         await doctor.save();
         res.status(201).json({ message: "Doctor added successfully", doctor });
 
@@ -73,15 +71,15 @@ exports.getAllDoctors = async (req, res) => {
 
 
         const doctors = await Doctor.find(query)
-        .populate("hospitals")
-        .skip(skip)
-        .limit(limitNumber)
-        .sort({ createdAt: -1 });
-    
-          const totalDoctors = await Doctor.countDocuments(query);
+            .populate("hospitals")
+            .skip(skip)
+            .limit(limitNumber)
+            .sort({ createdAt: -1 });
+
+        const totalDoctors = await Doctor.countDocuments(query);
 
 
-          res.status(200).json({
+        res.status(200).json({
             message: "Fetched Successfully",
             totalDoctors,
             totalPages: Math.ceil(totalDoctors / limitNumber),
@@ -108,44 +106,56 @@ exports.getDoctorsById = async (req, res) => {
 exports.updateDoctors = async (req, res) => {
     try {
         const { id } = req.params;
-        const { doctorName, email, password, specialization, hospitals, address, experience, education,clients, about } = req.body;
+        const { doctorName, specialization, hospitals, overview } = req.body;
 
-        let doctor = await Doctor.findById(id);
-        if (!doctor) {
-            return res.status(404).json({ message: "Doctor not found" });
+        // Handle single or multiple hospital IDs
+        const hospitalIds = Array.isArray(hospitals) ? hospitals : [hospitals];
+
+        if (hospitalIds.length === 0) {
+            return res.status(400).json({ message: 'Please provide valid hospital IDs' });
         }
 
-        if (hospitals) {
-            if (!mongoose.Types.ObjectId.isValid(hospitals)) {
-                return res.status(400).json({ message: "Invalid Hospital ID format" });
+        const validHospitals = [];
+        for (const id of hospitalIds) {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: `Invalid hospital ID format: ${id}` });
             }
-            const hospital = await Hospital.findById(hospitals);
+
+            const hospital = await Hospital.findById(id);
             if (!hospital) {
-                return res.status(404).json({ message: "Hospital ID not found" });
+                return res.status(404).json({ message: `Hospital ID not found: ${id}` });
             }
-            doctor.hospitals = hospital._id;
+
+            validHospitals.push(id);
         }
 
-        const image = req.file ? req.file.location :  doctor.image; 
-        if (password) {
-            doctor.password = await bcrypt.hash(password, 10);
+        let imageUrls = [];
+        if (req.files && req.files.length > 0) {
+            imageUrls = req.files.map(file => file.location);
         }
 
-        doctor.doctorName = doctorName || doctor.doctorName;
-        doctor.email = email || doctor.email;
-        doctor.image = image;
-        doctor.specialization = specialization || doctor.specialization;
-        doctor.address = address || doctor.address;
-        doctor.education=education||doctor.education;
-        doctor.experience = experience || doctor.experience;
-        doctor.clients = clients || doctor.clients;
-        doctor.about = about || doctor.about;
+        const updatedData = {
+            doctorName,
+            specialization,
+            overview,
+            hospitals: validHospitals
+        };
 
-        await doctor.save();
+        // Include images only if new ones are uploaded
+        if (imageUrls.length > 0) {
+            updatedData.images = imageUrls;
+        }
+
+        const doctor = await Doctor.findByIdAndUpdate(id, updatedData, { new: true });
+
+        if (!doctor) {
+            return res.status(404).json({ message: 'Doctor not found' });
+        }
 
         res.status(200).json({ message: "Doctor updated successfully", doctor });
 
     } catch (error) {
+        console.log("Error:", error.message);
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
@@ -166,7 +176,7 @@ exports.deleteDoctors = async (req, res) => {
 exports.loginDoctor = async (req, res) => {
     try {
         const { email, password } = req.body;
-        
+
         console.log("Received email:", email);
         console.log("Received password:", password); // Debugging
 
@@ -212,7 +222,7 @@ exports.loginDoctor = async (req, res) => {
         console.error("Login Error:", error.message);
         return res.status(500).json({ message: "Server error", error: error.message });
     }
-};  
+};
 
 
 
@@ -221,8 +231,8 @@ exports.loginDoctor = async (req, res) => {
 exports.getDoctorsOwnProfile = async (req, res) => {
     try {
         console.log("User Data in Request:", req.user); // ✅ Debugging
-        
-        const id = req.user.id;  
+
+        const id = req.user.id;
         if (!id) return res.status(400).json({ message: "User ID is missing from request." });
 
         const doctor = await Doctor.findById(id).populate("hospitals referrals");
@@ -278,11 +288,13 @@ exports.removeFromWishlist = async (req, res) => {
 
 exports.refferalhospital = async (req, res) => {
     try {
-        const { hospitalId,refferalCode } = req.body;
+        const { hospitalId, refferalCode } = req.body;
         if (!hospitalId || !refferalCode) return res.status(400).json({ message: "All fields required" });
 
-        const refferalshospital = new DoctorRefferalHospital({ hospitalId,
-            refferalCode });
+        const refferalshospital = new DoctorRefferalHospital({
+            hospitalId,
+            refferalCode
+        });
         await refferalshospital.save();
         res.status(201).json({ message: "Refferal added successfully", refferalshospital });
     } catch (error) {

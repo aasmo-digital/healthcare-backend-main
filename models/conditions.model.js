@@ -8,9 +8,11 @@ const conditionsSchema = new mongoose.Schema({
     image: {
         type: String
     },
-    treatments:{
-        type:mongoose.Schema.Types.ObjectId,ref:"Treatments",required:true
-    },
+    treatments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Treatments",
+        required: true
+    }],
     overview:{
         type:String
     }

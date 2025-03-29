@@ -13,21 +13,21 @@ const hospitalSchema = new mongoose.Schema({
     images: [{
         type: String
     }],
-    conditions:{
+    conditions:[{
         type:mongoose.Schema.Types.ObjectId,ref:"Conditions",required:true
-    },
+    }],
     overview:{
         type:String
     },
-    timings:{
-        type:String
-    },
-    specialitiesTreatments:[
-        {
-            websiteURL:{type:String},
-            phoneNumber:{type:Number}
-        }
-    ]
+    // timings:{
+    //     type:String
+    // },
+    // specialitiesTreatments:[
+    //     {
+    //         websiteURL:{type:String},
+    //         phoneNumber:{type:Number}
+    //     }
+    // ]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Hospital', hospitalSchema);

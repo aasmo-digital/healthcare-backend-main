@@ -8,14 +8,14 @@ const treatmentsSchema = new mongoose.Schema({
     image: {
         type: String
     },
-    treatmentDuration: [{
-        durationMin: { type: String },
-        durationMix: { type: String },
-    }],
-    treatmentCost:[ {
-        costMin: { type: Number },
-        costMix: { type: Number },
-    }],
+    // treatmentDuration: [{
+    //     durationMin: { type: String },
+    //     durationMix: { type: String },
+    // }],
+    // treatmentCost:[ {
+    //     costMin: { type: Number },
+    //     costMix: { type: Number },
+    // }],
     overview:{
         type:String
     }

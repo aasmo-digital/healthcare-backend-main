@@ -2,27 +2,19 @@ const Treatments = require('../models/treatments.model')
 
 exports.addTreatments = async (req, res) => {
     try {
-        const { name, treatmentDuration, treatmentCost,overview } = req.body;
+        const { name,overview } = req.body;
 
         // Extract the uploaded file name
         const image = req.file ? req.file.location : null; 
 
-        // Ensure treatmentDuration and treatmentCost are parsed correctly
-        const parsedDuration = Array.isArray(treatmentDuration) 
-            ? treatmentDuration 
-            : JSON.parse(treatmentDuration || "[]");
-            
-        const parsedCost = Array.isArray(treatmentCost) 
-            ? treatmentCost 
-            : JSON.parse(treatmentCost || "[]");
+    
 
-        // Create the treatment entry
+      
         const treatment = new Treatments({
             name,
             overview,
             image,
-            treatmentDuration: parsedDuration,
-            treatmentCost: parsedCost
+           
         });
 
         await treatment.save();
@@ -55,7 +47,7 @@ exports.getTreatmentsById = async (req, res) => {
 exports.updateTreatments = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, treatmentDuration, treatmentCost,overview } = req.body;
+        const { name, treatmentCost,overview } = req.body;
 
         let treatment = await Treatments.findById(id);
         if (!treatment) {
@@ -65,25 +57,14 @@ exports.updateTreatments = async (req, res) => {
         // Handle image update
       
         const image = req.file ? req.file.location : treatment.image; 
-        // Preserve existing treatmentDuration & treatmentCost if not provided in request
-        const parsedDuration = treatmentDuration
-            ? Array.isArray(treatmentDuration)
-                ? treatmentDuration
-                : JSON.parse(treatmentDuration || "[]")
-            : treatment.treatmentDuration;
-
-        const parsedCost = treatmentCost
-            ? Array.isArray(treatmentCost)
-                ? treatmentCost
-                : JSON.parse(treatmentCost || "[]")
-            : treatment.treatmentCost;
+  
+    
 
         // Update treatment fields
         treatment.name = name || treatment.name;
         treatment.overview = overview || treatment.overview;
         treatment.image = image;
-        treatment.treatmentDuration = parsedDuration;
-        treatment.treatmentCost = parsedCost;
+ 
 
         await treatment.save();
 

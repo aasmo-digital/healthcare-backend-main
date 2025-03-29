@@ -4,25 +4,37 @@ const mongoose = require("mongoose");
 exports.addConditions = async (req, res) => {
     try {
         const { name, overview, treatmentsId } = req.body;
-        console.log(treatmentsId, "treatmentsId")
-        if (!mongoose.Types.ObjectId.isValid(treatmentsId)) {
-            return res.status(400).json({ message: 'Invalid Treatment ID format' });
+        console.log(treatmentsId, "treatmentsId");
+
+        // Handle single or multiple treatment IDs
+        const treatmentIds = Array.isArray(treatmentsId) ? treatmentsId : [treatmentsId];
+
+        if (treatmentIds.length === 0) {
+            return res.status(400).json({ message: 'Please provide valid Treatment IDs' });
         }
 
-        // Find Treatment by ID
-        const treatment = await Treatments.findById(treatmentsId);
-        if (!treatment) {
-            return res.status(404).json({ message: 'Treatment ID not found' });
+        const validTreatmentIds = [];
+        for (const id of treatmentIds) {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: `Invalid Treatment ID format: ${id}` });
+            }
+
+            const treatment = await Treatments.findById(id);
+            if (!treatment) {
+                return res.status(404).json({ message: `Treatment ID not found: ${id}` });
+            }
+
+            validTreatmentIds.push(id);
         }
 
         // Handle image upload
-        const image = req.file ? req.file.location : null; 
+        const image = req.file ? req.file.location : null;
 
         // Create new condition
         const condition = new Conditions({
             name,
             image,
-            treatments: treatment._id,  // Store as ObjectId
+            treatments: validTreatmentIds,
             overview
         });
 
@@ -57,38 +69,41 @@ exports.getConditionsById = async (req, res) => {
 
 exports.updateConditions = async (req, res) => {
     try {
-        const { id } = req.params; // Condition ID to update
+        const { id } = req.params;
         const { name, overview, treatmentsId } = req.body;
 
         console.log("Updating condition with ID:", id);
 
-        // Find the existing condition
         let condition = await Conditions.findById(id);
         if (!condition) {
             return res.status(404).json({ message: "Condition not found" });
         }
 
-        // Validate and update the treatment ID if provided
-        if (treatmentsId) {
-            if (!mongoose.Types.ObjectId.isValid(treatmentsId)) {
-                return res.status(400).json({ message: "Invalid Treatment ID format" });
-            }
+        // Validate and update the treatment IDs if provided
+        const validTreatmentIds = [];
+        if (Array.isArray(treatmentsId) && treatmentsId.length > 0) {
+            for (const treatmentId of treatmentsId) {
+                if (!mongoose.Types.ObjectId.isValid(treatmentId)) {
+                    return res.status(400).json({ message: `Invalid Treatment ID format: ${treatmentId}` });
+                }
 
-            const treatment = await Treatments.findById(treatmentsId);
-            if (!treatment) {
-                return res.status(404).json({ message: "Treatment ID not found" });
-            }
+                const treatment = await Treatments.findById(treatmentId);
+                if (!treatment) {
+                    return res.status(404).json({ message: `Treatment ID not found: ${treatmentId}` });
+                }
 
-            condition.treatments = treatment._id; // Update treatment reference
+                validTreatmentIds.push(treatmentId);
+            }
         }
 
         // Handle image update (keep old image if not provided)
-    
-        const image = req.file ? req.file.location : condition.image; 
+        const image = req.file ? req.file.location : condition.image;
+
         // Update fields only if provided
         condition.name = name || condition.name;
         condition.image = image;
         condition.overview = overview || condition.overview;
+        condition.treatments = validTreatmentIds.length > 0 ? validTreatmentIds : condition.treatments;
 
         // Save the updated condition
         await condition.save();
@@ -99,6 +114,7 @@ exports.updateConditions = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 
 exports.deleteConditions = async (req, res) => {

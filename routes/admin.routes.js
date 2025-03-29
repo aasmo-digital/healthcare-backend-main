@@ -53,10 +53,10 @@ router.delete("/delete-hospital/:id", hospitalController.deleteHospital);
 
 
 //doctors
-router.post("/add-doctor",uploadSingle,DoctorController.addDoctors);
+router.post("/add-doctor",uploadMultiple,DoctorController.addDoctors);
 router.get("/getall-doctor",DoctorController.getAllDoctors);
 router.get("/getbyid-doctor/:id", DoctorController.getDoctorsById);
-router.put("/update-doctor/:id", uploadSingle,DoctorController.updateDoctors);
+router.put("/update-doctor/:id", uploadMultiple,DoctorController.updateDoctors);
 router.delete("/delete-doctor/:id", DoctorController.deleteDoctors);
 
 //doctor refferal hospital

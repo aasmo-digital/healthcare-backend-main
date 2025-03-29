@@ -5,23 +5,40 @@ const mongoose = require("mongoose");
 const path = require("path");
 const addHospital = async (req, res) => {
     try {
-        const { hospitalName, address, conditions, overview, timings, specialitiesTreatments } = req.body;
-     
-        let imageUrls=[];
-        if (req.files && req.files.length > 0) {
-            imageUrls = req.files ? req.files.map(file => file.location) : [];
+        const { hospitalName, address, conditions, overview } = req.body;
+
+        // Handle single or multiple condition IDs
+        const conditionIds = Array.isArray(conditions) ? conditions : [conditions];
+
+        if (conditionIds.length === 0) {
+            return res.status(400).json({ message: 'Please provide valid condition IDs' });
         }
 
-        const parsedSpecialities = specialitiesTreatments ? JSON.parse(specialitiesTreatments) : [];
+        const validConditions = [];
+        for (const id of conditionIds) {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: `Invalid condition ID format: ${id}` });
+            }
+
+            const condition = await Conditions.findById(id);
+            if (!condition) {
+                return res.status(404).json({ message: `Condition ID not found: ${id}` });
+            }
+
+            validConditions.push(id);
+        }
+
+        let imageUrls = [];
+        if (req.files && req.files.length > 0) {
+            imageUrls = req.files.map(file => file.location);
+        }
 
         const hospital = new Hospital({
             hospitalName,
             address,
-            conditions,
+            conditions: validConditions,
             overview,
-            timings,
-            images: imageUrls, // Fix: Ensure the field name matches the schema
-            specialitiesTreatments: parsedSpecialities
+            images: imageUrls,
         });
 
         await hospital.save();
@@ -31,6 +48,8 @@ const addHospital = async (req, res) => {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+
 
 const getallHospital = async (req, res) => {
     try {
@@ -114,7 +133,7 @@ const getbyIdHospital = async (req, res) => {
 
 const updateHospital = async (req, res) => {
     try {
-        const { hospitalName, address, conditions, overview, timings, specialitiesTreatments } = req.body;
+        const { hospitalName, address, conditions, overview } = req.body;
         const { id } = req.params;
 
         // Find the existing hospital
@@ -127,36 +146,30 @@ const updateHospital = async (req, res) => {
 
         // If new images are uploaded, replace existing images
         if (req.files && req.files.length > 0) {
-            // imageUrls = req.files.map(file => `/uploads/${file.filename}`);
-            imageUrls = req.files ? req.files.map(file => file.location):[]
+            imageUrls = req.files.map(file => file.location);
         }
 
-        // Ensure `conditions` is a valid ObjectId
-        let conditionsId = hospital.conditions; // Keep existing value if not provided
+        // Ensure `conditions` is a valid array of ObjectIds
+        let conditionsIds = hospital.conditions; // Keep existing value if not provided
         if (conditions) {
-            if (mongoose.Types.ObjectId.isValid(conditions)) {
-                conditionsId = new mongoose.Types.ObjectId(conditions);
-            } else {
-                return res.status(400).json({ success: false, message: "Invalid conditions ID" });
-            }
-        }
-
-        // Parse `specialitiesTreatments` safely
-        let parsedSpecialities = hospital.specialitiesTreatments; // Keep existing value
-        if (specialitiesTreatments) {
             try {
-                parsedSpecialities = typeof specialitiesTreatments === "string"
-                    ? JSON.parse(specialitiesTreatments)
-                    : specialitiesTreatments;
+                // Parse conditions if received as a JSON string
+                const parsedConditions = typeof conditions === 'string' ? JSON.parse(conditions) : conditions;
+                if (Array.isArray(parsedConditions)) {
+                    conditionsIds = parsedConditions.map(condition => {
+                        if (mongoose.Types.ObjectId.isValid(condition)) {
+                            return new mongoose.Types.ObjectId(condition);
+                        } else {
+                            throw new Error("Invalid conditions ID");
+                        }
+                    });
+                } else {
+                    return res.status(400).json({ success: false, message: "Conditions should be an array" });
+                }
             } catch (err) {
-                return res.status(400).json({ success: false, message: "Invalid specialitiesTreatments format" });
+                return res.status(400).json({ success: false, message: "Invalid conditions format" });
             }
         }
-
-        // Debugging logs
-        console.log("Updating hospital ID:", id);
-        console.log("New Conditions ID:", conditionsId);
-        console.log("Existing Conditions in DB:", hospital.conditions);
 
         // Perform the update
         const updatedHospital = await Hospital.findByIdAndUpdate(
@@ -164,11 +177,9 @@ const updateHospital = async (req, res) => {
             {
                 hospitalName,
                 address,
-                conditions: conditionsId, // Ensure this is an ObjectId
+                conditions: conditionsIds, // Update with an array of ObjectIds
                 overview,
-                timings,
                 images: imageUrls,
-                specialitiesTreatments: parsedSpecialities
             },
             { new: true }
         );
@@ -184,6 +195,7 @@ const updateHospital = async (req, res) => {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 const deleteHospital = async (req, res) => {
     try {
@@ -222,10 +234,10 @@ const getHospitalsByCondition = async (req, res) => {
         // Find doctors who work in these hospitals
         const doctors = await Doctor.find({ hospitals: { $in: hospitalIds } });
 
-        res.status(200).json({ 
-            success: true, 
-            hospitals, 
-            doctors 
+        res.status(200).json({
+            success: true,
+            hospitals,
+            doctors
         });
 
     } catch (error) {
@@ -237,4 +249,4 @@ const getHospitalsByCondition = async (req, res) => {
 
 
 
-module.exports = { addHospital, getallHospital, getbyIdHospital, updateHospital, getHospitalsByCondition,deleteHospital, getallHospitalUser }
+module.exports = { addHospital, getallHospital, getbyIdHospital, updateHospital, getHospitalsByCondition, deleteHospital, getallHospitalUser }

@@ -7,42 +7,45 @@ const doctorSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        email: {
-            type: String,
-            required: true,
-            unique: true
-        },
-        password: {
-            type: String,
-            required: true
-        },
+        // email: {
+        //     type: String,
+        //     required: true,
+        //     unique: true
+        // },
+        // password: {
+        //     type: String,
+        //     required: true
+        // },
         specialization: {
             type: String,
             required: true
         },
-        image: {
+        images: [{
             type: String
-        },
-        hospitals: {
+        }],
+        hospitals: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "Hospital",
             required: true
+        }],
+        overview:{
+            type:String
         },
-        address: {
-            type: String
-        },
-        experience: {
-            type: String
-        },
-        clients: {
-            type: String
-        },
-        education: {
-            type: String
-        },
-        about: {
-            type: String
-        },
+        // address: {
+        //     type: String
+        // },
+        // experience: {
+        //     type: String
+        // },
+        // clients: {
+        //     type: String
+        // },
+        // education: {
+        //     type: String
+        // },
+        // about: {
+        //     type: String
+        // },
         referralCode: {
             type: String,
             unique: true
