@@ -42,4 +42,13 @@ const isDoctor = (req, res, next) => {
     next();
 };
 
-module.exports = { authenticate, isAdmin, isDoctor }
+// Middleware to check if the user is a partner
+const isPartner = (req, res, next) => {
+    console.log("Partner Data in Request:", req.user); // Debugging
+    if (!req.user || req.user.role !== 'partner') {
+        return res.status(403).json({ message: 'Access denied. You are not a partner.' });
+    }
+    next();
+};
+
+module.exports = { authenticate, isAdmin, isDoctor,isPartner }

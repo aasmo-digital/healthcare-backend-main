@@ -25,8 +25,12 @@ const BookAppSchema = new mongoose.Schema({
         default:null,
         required: false
     },
-    dob: {
+    date: {
         type: Date,
+        required: true
+    },
+    age: {
+        type: String,
         required: true
     },
     gender: {

@@ -3,6 +3,7 @@ const router = express.Router();
 const cityController = require('../controllers/city.controller')
 const adminController = require('../controllers/admin.controller')
 const userController = require('../controllers/user.controller')
+const partnerController = require('../controllers/partner.controller')
 const treatmentsController = require('../controllers/treatments.controller')
 const conditionsController = require('../controllers/conditions.controller')
 const hospitalController = require('../controllers/hospital.controller')
@@ -79,6 +80,11 @@ router.get("/getbyid-banner/:id", bannerController.getbyIdBanner);
 router.put("/update-banner/:id", uploadSingle,bannerController.updateTreatments);
 router.delete("/delete-banner/:id", bannerController.deleteBanner);
 
-
+//partners
+router.post('/add-partner',partnerController.register);
+router.put('/update-partner/:id',partnerController.updatePartner);
+router.get("/getall-partner",partnerController.getallPartner);
+router.get("/getbyid-partner/:id",partnerController.getbyIdPartner);
+router.delete("/delete-partner/:id",partnerController.deletePartner);
 
 module.exports = router;

@@ -69,15 +69,26 @@ exports.getAllDoctors = async (req, res) => {
         const limitNumber = Math.max(1, parseInt(limit)); // Ensure limit is at least 1
         const skip = (pageNumber - 1) * limitNumber;
 
-
+        // Fetch doctors with populated hospital, conditions, and treatments
         const doctors = await Doctor.find(query)
-            .populate("hospitals")
+            .populate({
+                path: "hospitals",
+                select: "conditions", 
+                populate: {
+                    path: "conditions", 
+                    select: "treatments", 
+                    populate: {
+                        path: "treatments", 
+                        select: "_id", 
+                        model: "Treatments"  
+                    }
+                }
+            })
             .skip(skip)
             .limit(limitNumber)
             .sort({ createdAt: -1 });
 
         const totalDoctors = await Doctor.countDocuments(query);
-
 
         res.status(200).json({
             message: "Fetched Successfully",
@@ -90,6 +101,7 @@ exports.getAllDoctors = async (req, res) => {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 // Get Doctor By ID API
 exports.getDoctorsById = async (req, res) => {

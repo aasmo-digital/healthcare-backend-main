@@ -4,7 +4,7 @@ const cors = require('cors')
 const path = require('path')
 const userRoutes = require("./routes/user.routes.js")
 const adminRoutes = require("./routes/admin.routes.js")
-const doctorRoutes= require("./routes/doctor.routes.js")
+const partnerRoutes= require("./routes/partner.routes.js")
 const connectDB = require('./config/db');
 const app = express();
 connectDB();
@@ -21,7 +21,8 @@ app.use('/uploads',express.static(path.join(__dirname,'uploads')
 
 app.use('/api/user',userRoutes);
 app.use('/api/admin',adminRoutes);
-app.use('/api/doctor',doctorRoutes);
+app.use('/api/partner',partnerRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT,()=>{
     console.log(`Serving running on port${PORT}`);

@@ -25,7 +25,7 @@ const accountDetailsSchema = new mongoose.Schema({
     createdByModel: {
         type: String,
         required: true,
-        enum: ['User', 'Doctor'] // Specifies the possible models
+        enum: ['User', 'Doctor','Partner'] // Specifies the possible models
     }
 }, { timestamps: true });
 

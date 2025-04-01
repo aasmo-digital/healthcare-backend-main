@@ -85,7 +85,7 @@ const verifyOtp = async (req, res) => {
             process.env.JWT_SECRET
         );
 
-        return res.status(200).json({ message: "Login successful", token });
+        return res.status(200).json({ message: "Login successful", token,role: user.role });
     } catch (error) {
         console.error("OTP Verification Error:", error.message);
         return res.status(500).json({ message: "Server error", error: error.message });

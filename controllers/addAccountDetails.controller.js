@@ -1,6 +1,8 @@
 const AccountDetails = require('../models/addAccountDetails.model');
 const User = require('../models/user.models');
 const Doctor = require('../models/doctor.model');
+const Partner = require('../models/partner.model');
+
 // Add Account Details
 exports.addAccountDetails = async (req, res) => {
     try {
@@ -12,7 +14,10 @@ exports.addAccountDetails = async (req, res) => {
         }
 
         // Determine the model type dynamically based on role
-        const createdByModel = role === 'doctor' ? 'Doctor' : 'User';
+        let createdByModel;
+        if (role === 'doctor') createdByModel = 'Doctor';
+        else if (role === 'partner') createdByModel = 'Partner';
+        else createdByModel = 'User';
 
         const data = new AccountDetails({
             bankName,
@@ -24,10 +29,13 @@ exports.addAccountDetails = async (req, res) => {
         });
 
         await data.save();
-     
-         const Model = role === 'doctor' ? Doctor : User;
-         await Model.findByIdAndUpdate(id, { isAccountDetails: true }, { new: true });
- 
+
+        let Model;
+        if (role === 'doctor') Model = Doctor;
+        else if (role === 'partner') Model = Partner;
+        else Model = User;
+        await Model.findByIdAndUpdate(id, { isAccountDetails: true }, { new: true });
+
         res.status(201).json({ message: "Account details added successfully", data });
 
     } catch (error) {
@@ -35,7 +43,7 @@ exports.addAccountDetails = async (req, res) => {
     }
 };
 
-// Get All Account Details with User/Doctor Info
+// Get All Account Details with User/Doctor/Partner Info
 exports.getAllAccountDetails = async (req, res) => {
     try {
         const { search, page = 1, limit = 10 } = req.query;
@@ -47,7 +55,8 @@ exports.getAllAccountDetails = async (req, res) => {
         if (search) {
             searchQuery.$or = [
                 { createdByModel: 'User', createdBy: { $in: await User.find({ fullName: { $regex: search, $options: "i" } }).distinct('_id') } },
-                { createdByModel: 'Doctor', createdBy: { $in: await Doctor.find({ doctorName: { $regex: search, $options: "i" } }).distinct('_id') } }
+                { createdByModel: 'Doctor', createdBy: { $in: await Doctor.find({ doctorName: { $regex: search, $options: "i" } }).distinct('_id') } },
+                { createdByModel: 'Partner', createdBy: { $in: await Partner.find({ fullName: { $regex: search, $options: "i" } }).distinct('_id') } }
             ];
         }
 
@@ -57,12 +66,14 @@ exports.getAllAccountDetails = async (req, res) => {
             .limit(pageSize)
             .lean();
 
-        // Fetch associated User or Doctor details
+        // Fetch associated User, Doctor, or Partner details
         for (let detail of accountDetails) {
             if (detail.createdByModel === 'User') {
                 detail.createdBy = await User.findById(detail.createdBy).select('role fullName email phone commission');
             } else if (detail.createdByModel === 'Doctor') {
                 detail.createdBy = await Doctor.findById(detail.createdBy).select('role doctorName email specialization commission');
+            } else if (detail.createdByModel === 'Partner') {
+                detail.createdBy = await Partner.findById(detail.createdBy).select('role fullName email phone commission');
             }
         }
 
@@ -85,36 +96,42 @@ exports.getAllAccountDetails = async (req, res) => {
 
 
 
+
+// Add Commission
 exports.addCommission = async (req, res) => {
     try {
         const { id, role, commission } = req.body;
 
-        // Validate required fields
         if (!id || !role || commission === undefined) {
             return res.status(400).json({ message: "User ID, Role, and Commission are required" });
         }
 
         let updatedUser;
 
-        // Update the commission in the respective schema
         if (role === "user") {
             updatedUser = await User.findByIdAndUpdate(
                 id,
-                { $inc: { commission: commission } }, // Increment commission
+                { $inc: { commission: commission } },
                 { new: true }
-            ).select("fullName email phone commission"); // Return updated details
+            ).select("fullName email phone commission");
         } else if (role === "doctor") {
             updatedUser = await Doctor.findByIdAndUpdate(
                 id,
                 { $inc: { commission: commission } },
                 { new: true }
             ).select("doctorName email specialization commission");
+        } else if (role === "partner") {
+            updatedUser = await Partner.findByIdAndUpdate(
+                id,
+                { $inc: { commission: commission } },
+                { new: true }
+            ).select("fullName email phone commission");
         } else {
-            return res.status(400).json({ message: "Invalid role. Must be 'User' or 'Doctor'" });
+            return res.status(400).json({ message: "Invalid role. Must be 'User', 'Doctor', or 'Partner'" });
         }
 
         if (!updatedUser) {
-            return res.status(404).json({ message: "User/Doctor not found" });
+            return res.status(404).json({ message: "User/Doctor/Partner not found" });
         }
 
         res.status(200).json({ message: "Commission added successfully", data: updatedUser });
@@ -124,18 +141,17 @@ exports.addCommission = async (req, res) => {
     }
 };
 
+// Update Commission
 exports.updateCommission = async (req, res) => {
     try {
         const { id, role, commission } = req.body;
 
-        // Validate required fields
         if (!id || !role || commission === undefined) {
             return res.status(400).json({ message: "User ID, Role, and Commission are required" });
         }
 
         let updatedUser;
 
-        // Update the commission based on role
         if (role === "user") {
             updatedUser = await User.findByIdAndUpdate(
                 id,
@@ -145,15 +161,21 @@ exports.updateCommission = async (req, res) => {
         } else if (role === "doctor") {
             updatedUser = await Doctor.findByIdAndUpdate(
                 id,
-                { $set: { commission: commission } }, // Set new commission
+                { $set: { commission: commission } },
                 { new: true }
             ).select("doctorName email specialization commission");
+        } else if (role === "partner") {
+            updatedUser = await Partner.findByIdAndUpdate(
+                id,
+                { $set: { commission: commission } },
+                { new: true }
+            ).select("fullName email phone commission");
         } else {
-            return res.status(400).json({ message: "Invalid role. Must be 'User' or 'Doctor'" });
+            return res.status(400).json({ message: "Invalid role. Must be 'User', 'Doctor', or 'Partner'" });
         }
 
         if (!updatedUser) {
-            return res.status(404).json({ message: "User/Doctor not found" });
+            return res.status(404).json({ message: "User/Doctor/Partner not found" });
         }
 
         res.status(200).json({ message: "Commission updated successfully", data: updatedUser });

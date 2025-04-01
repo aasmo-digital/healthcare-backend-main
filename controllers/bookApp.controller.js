@@ -3,76 +3,20 @@ const Condition = require('../models/conditions.model');
 const City = require('../models/city.model');
 const User = require('../models/user.models');
 const Doctor = require('../models/doctor.model');
-// const createApp = async (req, res) => {
-//     try {
-//         const { name, cityId, relation, treatmentCondition, dob, gender, usedRefferal, doctorId } = req.body;
-//         const createdBy = req.user.id; // Extract user ID from authentication
-//         console.log(req.body, "req.body")
-//         if (!name || !cityId || !relation || !treatmentCondition || !dob || !gender) {
-//             return res.status(400).json({ message: "name, city, relation, treatmentCondition, dob, and gender are required" });
-//         }
-
-//         const dobDate = new Date(dob);
-//         if (isNaN(dobDate.getTime())) {
-//             return res.status(400).json({ message: "Invalid date format for dob" });
-//         }
-
-//         const condition = await Condition.findById(treatmentCondition);
-//         if (!condition) return res.status(404).json({ message: "Condition ID not found" });
-
-        
-
-//         const city = await City.findById(cityId);
-//         if (!city) return res.status(404).json({ message: "City ID not found" });
-//         let doctor;
-//         if (doctorId) {
-//             doctor = await Doctor.findById(doctorId);
-//             if (!doctor) return res.status(404).json({ message: "Doctor ID not found" });
-//         }
-//         if (usedRefferal) {
-//             const refferalCheckUser = await User.findOne({ referralCode: usedRefferal });
-//             const refferalCheckDoctor = await Doctor.findOne({ referralCode: usedRefferal });
-
-//             if (!refferalCheckUser && !refferalCheckDoctor) {
-//                 return res.status(400).json({ message: "Incorrect referral code for user or doctor" });
-//             }
-//         }
-
-//         const bookApp = new BookApp({
-//             name,
-//             city: city._id,
-//             relation,
-//             treatmentCondition: condition._id,
-//             dob: dobDate,
-//             gender,
-//             usedRefferal: usedRefferal || null,
-//             createdBy,
-//             doctorId:doctor?._id||null
-//         });
-
-//         await bookApp.save();
-//         res.status(201).json({ success: true, message: "Appointment booked successfully" });
-
-//     } catch (error) {
-//         console.error("Error:", error);
-//         res.status(500).json({ message: "Server error", error: error.message });
-//     }
-// };
-
-
+const Partner = require('../models/partner.model');
 const createApp = async (req, res) => {
     try {
-        const { name, cityId, relation, treatmentCondition, dob, gender, usedRefferal, doctorId } = req.body;
+        const { name, cityId, relation,age, treatmentCondition, date, gender, usedRefferal, doctorId } = req.body;
         const createdBy = req.user.id; // Extract user ID from authentication
         console.log(req.body, "req.body");
 
-        if (!name || !cityId || !relation || !treatmentCondition || !dob || !gender) {
-            return res.status(400).json({ message: "name, city, relation, treatmentCondition, dob, and gender are required" });
+        if (!name || !cityId || !relation || !treatmentCondition || !date || !gender ||!age) {
+            return res.status(400).json({ message: "name, city, relation,age, treatmentCondition, date, and gender are required" });
         }
 
-        const dobDate = new Date(dob);
-        if (isNaN(dobDate.getTime())) {
-            return res.status(400).json({ message: "Invalid date format for dob" });
+        const datecurrent = new Date(date);
+        if (isNaN(datecurrent.getTime())) {
+            return res.status(400).json({ message: "Invalid date format for date" });
         }
 
         // Validate Condition ID
@@ -92,6 +36,7 @@ const createApp = async (req, res) => {
 
         let referredUser = null;
         let referredDoctor = null;
+        let referredPartner = null;
 
         if (usedRefferal) {
             // Check if the referral code belongs to a user
@@ -101,9 +46,13 @@ const createApp = async (req, res) => {
             if (!referredUser) {
                 referredDoctor = await Doctor.findOne({ referralCode: usedRefferal });
             }
-
+            if (!referredUser && !referredDoctor) { // Corrected condition
+                referredPartner = await Partner.findOne({ referralCode: usedRefferal });
+            }
+            
+            
             // If referral code is invalid (not found for a user or doctor)
-            if (!referredUser && !referredDoctor) {
+            if (!referredUser && !referredDoctor &&!referredPartner) {
                 return res.status(400).json({ message: "Invalid referral code" });
             }
 
@@ -120,9 +69,10 @@ const createApp = async (req, res) => {
         const bookApp = new BookApp({
             name,
             city: city._id,
+            age,
             relation,
             treatmentCondition: condition._id,
-            dob: dobDate,
+            date: date,
             gender,
             usedRefferal: usedRefferal || null,
             createdBy,
@@ -168,6 +118,7 @@ const getAllBookApps = async (req, res) => {
             if (app.usedRefferal) {
                 const user = await User.findOne({ referralCode: app.usedRefferal }).select("fullName email phone role");
                 const doctor = await Doctor.findOne({ referralCode: app.usedRefferal }).select("doctorName email role specialization");
+                const partner = await Partner.findOne({ referralCode: app.usedRefferal }).select("fullName email phone role"); // Partner details
 
                 if (user) {
                     app.referredBy = {
@@ -184,6 +135,14 @@ const getAllBookApps = async (req, res) => {
                         email: doctor.email,
                         role: doctor.role,
                         specialization: doctor.specialization
+                    };
+                } else if (partner) {
+                    app.referredBy = {
+                        _id: partner._id,
+                        name: partner.fullName,
+                        email: partner.email,
+                        phone: partner.phone,
+                        role: partner.role
                     };
                 } else {
                     app.referredBy = null;
@@ -203,6 +162,7 @@ const getAllBookApps = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 const getBookAppById = async (req, res) => {
     try {
