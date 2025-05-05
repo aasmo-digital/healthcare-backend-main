@@ -23,8 +23,21 @@ exports.addDoctor = async (req, res) => {
             education
         } = req.body;
 
+        // Validate email
         if (!email) {
             return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+        // Check if the email already exists
+        const existingDoctor = await Doctor.findOne({ email });
+        if (existingDoctor) {
+            return res.status(400).json({ message: "Email is already taken" });
         }
 
         // Handle hospital validation
@@ -83,6 +96,7 @@ exports.addDoctor = async (req, res) => {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 
 // Get All Doctors API
