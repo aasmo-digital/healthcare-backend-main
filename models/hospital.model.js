@@ -16,9 +16,18 @@ const hospitalSchema = new mongoose.Schema({
     conditions:[{
         type:mongoose.Schema.Types.ObjectId,ref:"Conditions",required:true
     }],
+
+    email:[{
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+      }],
+
     overview:{
         type:String
     },
+    
     // timings:{
     //     type:String
     // },

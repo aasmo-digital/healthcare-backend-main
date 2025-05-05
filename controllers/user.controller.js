@@ -2,6 +2,10 @@ const { default: axios } = require("axios");
 const User = require("../models/user.models");
 const jwt = require("jsonwebtoken");
 
+const wachat_api=process.env.WACHAT_API;
+const wachat_token=process.env.WACHAT_TOKEN;
+
+
 const register = async (req, res) => {
     const { fullName, phone, city, email } = req.body;
     if (!fullName || !phone || !city || !email) {
@@ -32,29 +36,67 @@ const sendOtp = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Generate a 6-digit random OTP
+        // Generate OTP and expiry
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+        const otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+        console.log(`Generated OTP for ${phone}: ${otp}`);
 
-        // Save OTP in the user document
+        // Save to DB
         user.otp = otp;
         user.otpExpires = otpExpires;
         await user.save();
 
-        // Print OTP in console instead of sending via SMS
-        console.log(`Generated OTP for ${phone}: ${otp}`);
+        // WhatsApp payload
+        const payload = {
+            token: wachat_token,
+            phone: `91${phone}`,
+            template_name: "otp_verification",
+            template_language: "en",
+            components: [
+                {
+                    type: "BODY",
+                    parameters: [
+                        {
+                            type: "text",
+                            text: otp
+                        }
+                    ]
+                },
+                {
+                    type: "BUTTON",
+                    sub_type: "url",
+                    index: "0",
+                    parameters: [
+                        {
+                            type: "text",
+                            text: otp
+                        }
+                    ]
+                }
+            ]
+        };
 
-        res.status(200).json({ message: `${"OTP generated successfully "} ${"OTP"}: ${otp}` });
+        const whatsappRes = await axios.post(
+            wachat_api,
+            payload
+        );
+
+        console.log("WhatsApp API Response:", whatsappRes.data);
+
+        res.status(200).json({
+            message: "OTP sent successfully to WhatsApp",
+            whatsappStatus: whatsappRes.data
+        });
 
     } catch (error) {
-        console.error("OTP Send Error:", error.message);
+        console.error("Error sending OTP:", error.message);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
 const verifyOtp = async (req, res) => {
     const { phone, otp } = req.body;
-    console.log("Request Body:", req.body); // Debugging
+    console.log("Request Body:", req.body);
 
     try {
         const user = await User.findOne({ phone });
@@ -64,33 +106,36 @@ const verifyOtp = async (req, res) => {
 
         console.log(`Stored OTP: ${user.otp}, Received OTP: ${otp}`);
 
-        // Ensure OTP comparison is correct
+        // Check OTP match
         if (String(user.otp) !== String(otp)) {
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
-        // Ensure OTP expiry check is working
+        // Check expiry
         if (user.otpExpires < Date.now()) {
             return res.status(400).json({ message: "OTP has expired" });
         }
 
-        // Clear OTP fields
+        // Clear OTP after successful login
         user.otp = undefined;
         user.otpExpires = undefined;
         await user.save();
 
-        // Generate JWT token with `id` instead of `userId`
+        // Generate JWT Token
         const token = jwt.sign(
-            { id: user._id, role: user.role }, // Changed userId to id
-            process.env.JWT_SECRET
+            { id: user._id, role: user.role }, // using `id` instead of `userId`
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
         );
 
-        return res.status(200).json({ message: "Login successful", token,role: user.role });
+        return res.status(200).json({ message: "Login successful", token, role: user.role });
+
     } catch (error) {
         console.error("OTP Verification Error:", error.message);
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 
 const getOwnProfile = async (req, res) => {
@@ -106,7 +151,7 @@ const getOwnProfile = async (req, res) => {
             .select("-otp -otpExpires")
             .populate('city') // Populating city details
             .populate({
-                path: 'referrals', 
+                path: 'referrals',
                 select: 'fullName phone email city role createdAt', // Selecting only necessary fields
                 populate: { path: 'city', select: 'name' } // Populating city inside referrals
             });
@@ -134,7 +179,7 @@ const getallUser = async (req, res) => {
             ];
         }
         const skip = (page - 1) * limit;
-        
+
         // Fetch users with city details
         const users = await User.find(query)
             .populate("city") // <-- Populating city details
@@ -145,14 +190,14 @@ const getallUser = async (req, res) => {
         // Get total user count
         const totalUsers = await User.countDocuments(query);
 
-        res.status(200).json({ 
-            message: "Fetched Successfully", 
-            totalUsers, 
-            totalPages: Math.ceil(totalUsers / limit), 
-            currentPage: parseInt(page), 
-            users 
+        res.status(200).json({
+            message: "Fetched Successfully",
+            totalUsers,
+            totalPages: Math.ceil(totalUsers / limit),
+            currentPage: parseInt(page),
+            users
         });
-    } 
+    }
     catch (error) {
         console.error("Error fetching user profile:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -178,9 +223,9 @@ const getbyIdUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
-        const {fullName, phone, city, email}=req.body
-       const user = await User.findByIdAndUpdate(req.params.id, { fullName, phone, city, email }, { new: true });
-               if (!user) return res.status(404).json({ message: "User not found" });
+        const { fullName, phone, city, email } = req.body
+        const user = await User.findByIdAndUpdate(req.params.id, { fullName, phone, city, email }, { new: true });
+        if (!user) return res.status(404).json({ message: "User not found" });
 
         res.status(200).json({ message: "Fetched Successfully", user });
     }
@@ -234,4 +279,4 @@ const getReferredUsers = async (req, res) => {
     }
 };
 
-module.exports = { register, sendOtp, verifyOtp, getOwnProfile,getReferredUsers, getallUser ,getbyIdUser,updateUser,deleteUser};
+module.exports = { register, sendOtp, verifyOtp, getOwnProfile, getReferredUsers, getallUser, getbyIdUser, updateUser, deleteUser };

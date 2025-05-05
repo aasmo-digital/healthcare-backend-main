@@ -7,13 +7,28 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 // Add Doctor API
-exports.addDoctors = async (req, res) => {
+exports.addDoctor = async (req, res) => {
     try {
-        const { doctorName, specialization, hospitals, overview } = req.body;
+        const {
+            doctorName,
+            specialization,
+            hospitals,
+            overview,
+            email,
+            address,
+            experience,
+            clients,
+            about,
+            password,
+            education
+        } = req.body;
 
-        // Handle single or multiple hospital IDs
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Handle hospital validation
         const hospitalIds = Array.isArray(hospitals) ? hospitals : [hospitals];
-
         if (hospitalIds.length === 0) {
             return res.status(400).json({ message: 'Please provide valid hospital IDs' });
         }
@@ -32,9 +47,17 @@ exports.addDoctors = async (req, res) => {
             validHospitals.push(id);
         }
 
+        // Upload images
         let imageUrls = [];
         if (req.files && req.files.length > 0) {
             imageUrls = req.files.map(file => file.location);
+        }
+
+        // Hash password if provided
+        let hashedPassword = null;
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(password, salt);
         }
 
         const doctor = new Doctor({
@@ -42,14 +65,21 @@ exports.addDoctors = async (req, res) => {
             specialization,
             images: imageUrls,
             hospitals: validHospitals,
-            overview
+            overview,
+            email,
+            address,
+            experience,
+            clients,
+            about,
+            password: hashedPassword,
+            education
         });
 
         await doctor.save();
         res.status(201).json({ message: "Doctor added successfully", doctor });
 
     } catch (error) {
-        console.log("Error:", error.message);
+        console.error("Error:", error.message);
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
@@ -118,7 +148,7 @@ exports.getDoctorsById = async (req, res) => {
 exports.updateDoctors = async (req, res) => {
     try {
         const { id } = req.params;
-        const { doctorName, specialization, hospitals, overview } = req.body;
+        const { doctorName, specialization, hospitals, overview} = req.body;
 
         // Handle single or multiple hospital IDs
         const hospitalIds = Array.isArray(hospitals) ? hospitals : [hospitals];

@@ -3,6 +3,10 @@ const Partner = require("../models/partner.model");
 const User = require("../models/user.models");
 const jwt = require("jsonwebtoken");
 const BookApp = require('../models/bookApp.model');
+
+const wachat_api=process.env.WACHAT_API;
+const wachat_token=process.env.WACHAT_TOKEN;
+
 const register = async (req, res) => {
     const { fullName, phone, city, email } = req.body;
     if (!fullName || !phone || !city || !email) {
@@ -33,29 +37,67 @@ const sendOtp = async (req, res) => {
             return res.status(404).json({ message: "Partner not found" });
         }
 
-        // Generate a 6-digit random OTP
+        // Generate OTP and expiry
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+        const otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+        console.log(`Generated OTP for ${phone}: ${otp}`);
 
-        // Save OTP in the partner document
+        // Save to DB
         partner.otp = otp;
         partner.otpExpires = otpExpires;
         await partner.save();
 
-        // Print OTP in console instead of sending via SMS
-        console.log(`Generated OTP for ${phone}: ${otp}`);
+        // WhatsApp payload
+        const payload = {
+            token: wachat_token,
+            phone: `91${phone}`,
+            template_name: "otp_verification",
+            template_language: "en",
+            components: [
+                {
+                    type: "BODY",
+                    parameters: [
+                        {
+                            type: "text",
+                            text: otp
+                        }
+                    ]
+                },
+                {
+                    type: "BUTTON",
+                    sub_type: "url",
+                    index: "0",
+                    parameters: [
+                        {
+                            type: "text",
+                            text: otp
+                        }
+                    ]
+                }
+            ]
+        };
 
-        res.status(200).json({ message: `${"OTP generated successfully "} ${"OTP"}: ${otp}` });
+        const whatsappRes = await axios.post(
+            wachat_api,
+            payload
+        );
+
+        console.log("WhatsApp API Response:", whatsappRes.data);
+
+        res.status(200).json({
+            message: "OTP sent successfully to WhatsApp",
+            whatsappStatus: whatsappRes.data
+        });
 
     } catch (error) {
-        console.error("OTP Send Error:", error.message);
+        console.error("Error sending OTP:", error.message);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
 const verifyOtp = async (req, res) => {
     const { phone, otp } = req.body;
-    console.log("Request Body:", req.body); // Debugging
+    console.log("Request Body:", req.body);
 
     try {
         const partner = await Partner.findOne({ phone });
@@ -65,28 +107,30 @@ const verifyOtp = async (req, res) => {
 
         console.log(`Stored OTP: ${partner.otp}, Received OTP: ${otp}`);
 
-        // Ensure OTP comparison is correct
+        // Check OTP match
         if (String(partner.otp) !== String(otp)) {
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
-        // Ensure OTP expiry check is working
+        // Check expiry
         if (partner.otpExpires < Date.now()) {
             return res.status(400).json({ message: "OTP has expired" });
         }
 
-        // Clear OTP fields
+        // Clear OTP after successful login
         partner.otp = undefined;
         partner.otpExpires = undefined;
         await partner.save();
 
-       
+        // Generate JWT Token
         const token = jwt.sign(
-            { id: partner._id, role: partner.role }, 
-            process.env.JWT_SECRET
+            { id: partner._id, role: partner.role }, // using `id` instead of `userId`
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
         );
 
-        return res.status(200).json({ message: "Login successful", token,role: partner.role });
+        return res.status(200).json({ message: "Login successful", token, role: partner.role });
+
     } catch (error) {
         console.error("OTP Verification Error:", error.message);
         return res.status(500).json({ message: "Server error", error: error.message });

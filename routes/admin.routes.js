@@ -54,7 +54,7 @@ router.delete("/delete-hospital/:id", hospitalController.deleteHospital);
 
 
 //doctors
-router.post("/add-doctor",uploadMultiple,DoctorController.addDoctors);
+router.post("/add-doctor",uploadMultiple,DoctorController.addDoctor);
 router.get("/getall-doctor",DoctorController.getAllDoctors);
 router.get("/getbyid-doctor/:id", DoctorController.getDoctorsById);
 router.put("/update-doctor/:id", uploadMultiple,DoctorController.updateDoctors);

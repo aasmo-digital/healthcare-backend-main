@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const addHospital = async (req, res) => {
     try {
-        const { hospitalName, address, conditions, overview } = req.body;
+        const { hospitalName, address, conditions, overview,email } = req.body;
 
         // Handle single or multiple condition IDs
         const conditionIds = Array.isArray(conditions) ? conditions : [conditions];
@@ -39,6 +39,9 @@ const addHospital = async (req, res) => {
             conditions: validConditions,
             overview,
             images: imageUrls,
+            email
+            
+
         });
 
         await hospital.save();

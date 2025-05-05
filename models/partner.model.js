@@ -6,13 +6,26 @@ const partnerSchema = new mongoose.Schema({
         required: true
     },
     phone: {
-        type: Number,
+        type: String,
         required: true,
-        unique: true
+        unique: true,
+        set: function (value) {
+            if (typeof value === 'string' && !value.startsWith('91')) {
+                return '91' + value;
+            }
+            return value;
+        },
+        validate: {
+            validator: function (v) {
+                return /^91\d{10}$/.test(v); // 91 followed by exactly 10 digits
+            },
+            message: props => `${props.value} is not a valid phone number! It must start with 91 and be 12 digits.`
+        }
     },
     otp: {
         type: String,
     },
+    otpExpires: Date,
     city: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "City",
@@ -31,10 +44,10 @@ const partnerSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
-    isAccountDetails:{
-       type:Boolean,
-      
-       default:false
+    isAccountDetails: {
+        type: Boolean,
+
+        default: false
     },
     commission: { type: Number, default: 0 },
     referrals: [
